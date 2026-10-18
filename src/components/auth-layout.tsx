@@ -1,111 +1,153 @@
 "use client";
 
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { BrandMark } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
 
-type Bubble = { id: number; x: number; y: number; size: number; color: string; depth: number; dur: number; delay: number; popping?: boolean };
+type Ping = { x: number; y: number; born: number };
 
-// Soft, warm palette (works on light and dark backgrounds).
-const COLORS = ["#f4b8a0", "#b9d8c2", "#c9c2ef", "#f6d78b", "#a9cbe8", "#f2b5cf"];
-const SEED: Omit<Bubble, "id">[] = [
-  { x: 8, y: 14, size: 220, color: COLORS[0], depth: 0.6, dur: 16, delay: 0 },
-  { x: 78, y: 8, size: 160, color: COLORS[2], depth: 1.1, dur: 13, delay: -3 },
-  { x: 86, y: 62, size: 260, color: COLORS[1], depth: 0.5, dur: 18, delay: -6 },
-  { x: 14, y: 72, size: 140, color: COLORS[3], depth: 1.3, dur: 12, delay: -2 },
-  { x: 52, y: 88, size: 110, color: COLORS[4], depth: 1.5, dur: 11, delay: -5 },
-  { x: 62, y: 24, size: 80, color: COLORS[5], depth: 1.8, dur: 10, delay: -1 },
-  { x: 32, y: 40, size: 60, color: COLORS[0], depth: 2, dur: 9, delay: -4 },
-  { x: 92, y: 36, size: 54, color: COLORS[3], depth: 2.2, dur: 10, delay: -7 },
-];
-
-/** Floating bubbles that lean toward the pointer; click one to pop it (a new one floats in). */
-function BubbleField() {
-  const [bubbles, setBubbles] = useState<Bubble[]>(() => SEED.map((b, i) => ({ ...b, id: i })));
-  const ref = useRef<HTMLDivElement>(null);
-  const next = useRef(SEED.length);
+/**
+ * "Every knock answered": a quiet dot grid where leads ping in at random points,
+ * ripple, and get routed (a thin line) to the sign-in card. Dots near the pointer glow.
+ */
+function KnockField() {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let raf = 0;
-    const onMove = (e: PointerEvent) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        el.style.setProperty("--mx", String(e.clientX / window.innerWidth - 0.5));
-        el.style.setProperty("--my", String(e.clientY / window.innerHeight - 0.5));
-      });
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const GAP = 26;
+    let w = 0, h = 0, dpr = 1, raf = 0;
+    let mouse = { x: -9999, y: -9999 };
+    let pings: Ping[] = [];
+    let lastSpawn = 0;
+    let colors = { dot: "rgba(28,27,24,0.16)", accent: "42,74,127" };
+
+    const readColors = () => {
+      const s = getComputedStyle(document.documentElement);
+      const dark = document.documentElement.classList.contains("dark");
+      const hex = s.getPropertyValue("--accent").trim() || "#2a4a7f";
+      const n = parseInt(hex.replace("#", ""), 16);
+      colors = {
+        dot: dark ? "rgba(236,235,231,0.13)" : "rgba(28,27,24,0.15)",
+        accent: `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`,
+      };
     };
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const draw = (t: number) => {
+      ctx.clearRect(0, 0, w, h);
+      const cx = w / 2, cy = h / 2;
+
+      // Dot grid, brighter near the pointer.
+      for (let x = GAP / 2; x < w; x += GAP) {
+        for (let y = GAP / 2; y < h; y += GAP) {
+          const d = Math.hypot(x - mouse.x, y - mouse.y);
+          if (d < 140) {
+            const k = 1 - d / 140;
+            ctx.fillStyle = `rgba(${colors.accent},${0.15 + k * 0.55})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.1 + k * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = colors.dot;
+            ctx.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
+          }
+        }
+      }
+
+      if (reduce) return;
+
+      // New knock every ~0.9s, away from the card in the middle.
+      if (t - lastSpawn > 900) {
+        lastSpawn = t;
+        for (let tries = 0; tries < 10; tries++) {
+          const gx = Math.floor(Math.random() * (w / GAP)) * GAP + GAP / 2;
+          const gy = Math.floor(Math.random() * (h / GAP)) * GAP + GAP / 2;
+          if (Math.abs(gx - cx) > 230 || Math.abs(gy - cy) > 300) { pings.push({ x: gx, y: gy, born: t }); break; }
+        }
+      }
+
+      pings = pings.filter((p) => t - p.born < 2600);
+      for (const p of pings) {
+        const age = (t - p.born) / 2600; // 0..1
+        // Ripple rings.
+        for (const off of [0, 0.18]) {
+          const a = age - off;
+          if (a <= 0 || a > 0.6) continue;
+          const r = (a / 0.6) * 34;
+          ctx.strokeStyle = `rgba(${colors.accent},${(1 - a / 0.6) * 0.5})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        // Core dot.
+        ctx.fillStyle = `rgba(${colors.accent},${Math.max(0, 1 - age) * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2);
+        ctx.fill();
+        // Route line toward the card: draws in, then fades.
+        const grow = Math.min(1, Math.max(0, (age - 0.15) / 0.45));
+        if (grow > 0) {
+          const fade = age > 0.7 ? 1 - (age - 0.7) / 0.3 : 1;
+          const ex = p.x + (cx - p.x) * grow * 0.92;
+          const ey = p.y + (cy - p.y) * grow * 0.92;
+          const g = ctx.createLinearGradient(p.x, p.y, ex, ey);
+          g.addColorStop(0, `rgba(${colors.accent},${0.35 * fade})`);
+          g.addColorStop(1, `rgba(${colors.accent},0)`);
+          ctx.strokeStyle = g;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(ex, ey);
+          ctx.stroke();
+        }
+      }
+    };
+
+    const loop = (t: number) => { draw(t); raf = requestAnimationFrame(loop); };
+    const onMove = (e: PointerEvent) => { mouse = { x: e.clientX, y: e.clientY }; if (reduce) draw(0); };
+    const onLeave = () => { mouse = { x: -9999, y: -9999 }; };
+
+    readColors();
+    resize();
+    const colorTimer = window.setInterval(readColors, 800);
+    window.addEventListener("resize", resize);
     window.addEventListener("pointermove", onMove);
-    return () => { window.removeEventListener("pointermove", onMove); cancelAnimationFrame(raf); };
+    document.addEventListener("pointerleave", onLeave);
+    if (reduce) draw(0); else raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(colorTimer);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave);
+    };
   }, []);
 
-  const pop = (id: number) => {
-    setBubbles((bs) => bs.map((b) => (b.id === id ? { ...b, popping: true } : b)));
-    setTimeout(() => {
-      setBubbles((bs) => {
-        const old = bs.find((b) => b.id === id);
-        const rest = bs.filter((b) => b.id !== id);
-        if (!old) return rest;
-        const fresh: Bubble = {
-          ...old,
-          id: next.current++,
-          popping: false,
-          x: 5 + Math.random() * 90,
-          y: 5 + Math.random() * 85,
-          color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        };
-        return [...rest, fresh];
-      });
-    }, 380);
-  };
-
-  return (
-    <div ref={ref} className="pointer-events-none absolute inset-0 overflow-hidden" style={{ ["--mx" as string]: 0, ["--my" as string]: 0 }}>
-      {bubbles.map((b) => (
-        <div
-          key={b.id}
-          className="absolute transition-transform duration-700 ease-out"
-          style={{
-            left: `${b.x}%`,
-            top: `${b.y}%`,
-            width: b.size,
-            height: b.size,
-            marginLeft: -b.size / 2,
-            marginTop: -b.size / 2,
-            transform: `translate3d(calc(var(--mx) * ${b.depth * 60}px), calc(var(--my) * ${b.depth * 60}px), 0)`,
-          }}
-        >
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-hidden
-            onClick={() => pop(b.id)}
-            className={`bubble-in pointer-events-auto block size-full cursor-pointer rounded-full ${b.popping ? "bubble-pop" : ""}`}
-          >
-            <span
-              className="bubble-drift block size-full rounded-full"
-              style={{
-                ["--dur" as string]: `${b.dur}s`,
-                ["--delay" as string]: `${b.delay}s`,
-                background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9) 0%, ${b.color} 38%, color-mix(in oklab, ${b.color} 88%, #5a3a2a) 100%)`,
-                boxShadow: `0 24px 50px -22px ${b.color}`,
-                opacity: 0.92,
-              }}
-            />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+  return <canvas ref={ref} aria-hidden className="pointer-events-none absolute inset-0 size-full" />;
 }
 
 export function AuthLayout({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode }) {
   return (
-    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#fbf7f2] px-5 py-12 dark:bg-[#15130f]">
-      <BubbleField />
+    <div className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-bg px-5 py-12">
+      <KnockField />
+      {/* Soft vignette so the card area stays calm */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--bg)_0%,transparent_55%)] opacity-80" />
       <div className="absolute right-3 top-3 z-10"><ThemeToggle /></div>
-      <div className="bubble-in relative z-10 w-full max-w-[380px] rounded-[28px] border border-white/70 bg-white/75 p-8 shadow-[0_30px_80px_-30px_rgba(60,40,20,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-[#1f1c17]/80 sm:p-9">
+      <div className="relative z-10 w-full max-w-[380px] animate-fade-up rounded-[24px] border border-line bg-surface/85 p-8 shadow-[0_30px_80px_-30px_rgba(28,27,24,0.28)] backdrop-blur-md sm:p-9">
         <div className="mb-7 flex flex-col items-center text-center">
           <div className="flex items-center gap-2.5">
             <BrandMark className="size-11 rounded-2xl" />
@@ -117,7 +159,6 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
         {children}
         <div className="mt-6 text-center text-sm text-muted">{footer}</div>
       </div>
-      <p className="absolute bottom-4 left-0 right-0 z-10 text-center text-xs text-subtle">Psst, the bubbles pop.</p>
     </div>
   );
 }
