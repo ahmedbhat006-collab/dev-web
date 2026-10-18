@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { Check, Shuffle, ArrowUpRight, Phone, Mail, Building, CircleCheck, Archive, TriangleAlert } from "lucide-react";
+import { Check, Shuffle, ArrowUpRight, Phone, Mail, Building, CircleCheck, Archive, TriangleAlert, CalendarPlus } from "lucide-react";
 import { useApi, api, useAction, refresh, fmtDuration, fmtDateTime } from "@/lib/client";
 import { PageHeader, Button, Card, Badge, Avatar, Skeleton, ErrorState, Modal, Field, Select, Dot } from "@/components/ui";
-import { LeadStatus, SourceBadge, Timeline, useSkew, ActivityRow, NoteComposer, Section } from "@/components/crm";
+import { LeadStatus, SourceBadge, Timeline, useSkew, ActivityRow, NoteComposer, Section, BookingModal } from "@/components/crm";
 import { STATUS_TONE } from "@/components/shell";
 import { STATUS_LABEL } from "@/lib/labels";
 import { useMe } from "@/components/me";
@@ -27,6 +27,7 @@ export default function LeadDetailPage() {
   const skew = useSkew(l?.serverNow);
   const { pending, run } = useAction();
   const [reassign, setReassign] = useState(false);
+  const [booking, setBooking] = useState(false);
 
   if (error) return <ErrorState error={error} onRetry={() => mutate()} />;
   if (!l) return <div className="space-y-4"><Skeleton className="h-16" /><Skeleton className="h-64" /></div>;
@@ -44,6 +45,7 @@ export default function LeadDetailPage() {
         actions={
           <>
             {l.canAck && <Button variant="primary" size="lg" icon={<Check className="size-4" />} loading={pending} onClick={ack}>Acknowledge</Button>}
+            {l.status !== "CLOSED" && <Button icon={<CalendarPlus className="size-4" />} onClick={() => setBooking(true)}>Book appointment</Button>}
             {l.canReassign && <Button icon={<Shuffle className="size-4" />} onClick={() => setReassign(true)}>Reassign</Button>}
             {l.status !== "CLOSED" && (l.assignee?.id === me.id || l.canReassign) && <Button variant="ghost" icon={<Archive className="size-4" />} onClick={close}>Close</Button>}
           </>
@@ -116,6 +118,7 @@ export default function LeadDetailPage() {
           </Card>
         </div>
       </div>
+      <BookingModal open={booking} onClose={() => setBooking(false)} contactId={l.contact.id} opportunityId={l.opportunity?.id} contactName={l.contact.name} />
       <ReassignModal open={reassign} onClose={() => setReassign(false)} leadId={l.id} currentId={l.assignee?.id} onDone={() => mutate()} />
     </div>
   );
