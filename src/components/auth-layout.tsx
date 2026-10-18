@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useRef } from "react";
 import { BrandMark } from "./brand";
 import { ThemeToggle } from "./theme-toggle";
+import { LoginScene } from "./login-scene";
 
 type Ping = { x: number; y: number; born: number };
 
@@ -48,7 +49,13 @@ function KnockField() {
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, w, h);
-      const cx = w / 2, cy = h / 2;
+      // Route knocks into the sign-in card, and keep them off the card and the illustration.
+      const card = document.querySelector("[data-auth-card]")?.getBoundingClientRect();
+      const scene = document.querySelector("[data-auth-scene]")?.getBoundingClientRect();
+      const cx = card ? card.left + card.width / 2 : w / 2;
+      const cy = card ? card.top + card.height / 2 : h / 2;
+      const blocked = (x: number, y: number) =>
+        [card, scene].some((r) => r && r.width > 0 && x > r.left - 30 && x < r.right + 30 && y > r.top - 30 && y < r.bottom + 30);
 
       // Dot grid, brighter near the pointer.
       for (let x = GAP / 2; x < w; x += GAP) {
@@ -75,7 +82,9 @@ function KnockField() {
         for (let tries = 0; tries < 10; tries++) {
           const gx = Math.floor(Math.random() * (w / GAP)) * GAP + GAP / 2;
           const gy = Math.floor(Math.random() * (h / GAP)) * GAP + GAP / 2;
-          if (Math.abs(gx - cx) > 230 || Math.abs(gy - cy) > 300) { pings.push({ x: gx, y: gy, born: t }); break; }
+          const sceneR = scene && scene.width > 0 ? scene : null;
+          const crossesScene = sceneR && ((gx < sceneR.right && cx > sceneR.left) || (gx > sceneR.left && cx < sceneR.right)) && gy > sceneR.top && gy < sceneR.bottom;
+          if (!blocked(gx, gy) && !crossesScene) { pings.push({ x: gx, y: gy, born: t }); break; }
         }
       }
 
@@ -147,7 +156,12 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
       {/* Soft vignette so the card area stays calm */}
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--bg)_0%,transparent_55%)] opacity-80" />
       <div className="absolute right-3 top-3 z-10"><ThemeToggle /></div>
-      <div className="relative z-10 w-full max-w-[380px] animate-fade-up rounded-[24px] border border-line bg-surface/85 p-8 shadow-[0_30px_80px_-30px_rgba(28,27,24,0.28)] backdrop-blur-md sm:p-9">
+      <div className="relative z-10 flex w-full max-w-[1100px] items-center justify-center gap-10 xl:gap-16">
+      <div data-auth-scene className="hidden flex-1 flex-col items-center rounded-[28px] border border-line bg-surface/60 px-6 pb-8 pt-6 shadow-[0_30px_80px_-40px_rgba(28,27,24,0.25)] backdrop-blur-sm lg:flex">
+        <LoginScene />
+        <p className="mt-2 text-[15px] font-medium tracking-[-0.01em] text-muted">Every knock, answered.</p>
+      </div>
+      <div data-auth-card className="relative w-full max-w-[380px] shrink-0 animate-fade-up rounded-[24px] border border-line bg-surface/85 p-8 shadow-[0_30px_80px_-30px_rgba(28,27,24,0.28)] backdrop-blur-md sm:p-9">
         <div className="mb-7 flex flex-col items-center text-center">
           <div className="flex items-center gap-2.5">
             <BrandMark className="size-11 rounded-2xl" />
@@ -158,6 +172,7 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
         </div>
         {children}
         <div className="mt-6 text-center text-sm text-muted">{footer}</div>
+      </div>
       </div>
     </div>
   );

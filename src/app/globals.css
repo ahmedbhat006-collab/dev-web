@@ -174,3 +174,29 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---- Sign-in illustration (login-scene.tsx) ---- */
+@keyframes scene-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes scene-pop { from { opacity: 0; transform: translateY(10px) scale(0.92); } to { opacity: 1; transform: none; } }
+@keyframes scene-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes scene-steam { 0% { opacity: 0; transform: translateY(6px); } 40% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-10px); } }
+@keyframes scene-dash { to { stroke-dashoffset: -40; } }
+@keyframes scene-type { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-2.5px); } }
+@keyframes scene-typing { 0%, 60%, 100% { opacity: 0.25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+@keyframes scene-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 75.4; } }
+@keyframes scene-glow { 0%, 100% { opacity: 0.65; } 50% { opacity: 1; } }
+.scene-card { filter: drop-shadow(0 10px 18px rgb(28 27 24 / 0.08)); }
+.scene-pop { animation: scene-pop 600ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; transform-box: fill-box; transform-origin: center; }
+.scene-float { animation: scene-float 5s ease-in-out infinite; }
+.scene-dur-1 { animation-duration: 4.6s; }
+.scene-dur-2 { animation-duration: 5.4s; animation-delay: -1.5s; }
+.scene-dur-3 { animation-duration: 6.2s; animation-delay: -3s; }
+.scene-blink { animation: scene-blink 4.5s infinite; transform-box: fill-box; transform-origin: center; }
+.scene-steam { animation: scene-steam 3s ease-in-out infinite; }
+.scene-dash { animation: scene-dash 2.4s linear infinite; }
+.scene-type { animation: scene-type 0.5s ease-in-out infinite; }
+.scene-typing { animation: scene-typing 1.2s ease-in-out infinite; }
+.scene-ring { animation: scene-ring 8s linear infinite; }
+.scene-glow { animation: scene-glow 3.2s ease-in-out infinite; }
+.scene-delay-1 { animation-delay: 0.25s; }
+.scene-delay-2 { animation-delay: 0.5s; }
