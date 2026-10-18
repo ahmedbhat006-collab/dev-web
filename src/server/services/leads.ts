@@ -181,7 +181,7 @@ function esc(s: string) {
 
 function escalationEmail(p: { name: string; source: string; reason: string; windowSec: number; link: string }) {
   return `<div style="font-family:Inter,Segoe UI,Arial,sans-serif;max-width:520px;margin:auto;padding:24px;color:#1a1a19">
-  <p style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6a65;margin:0 0 8px">LeadGuard · Lead escalation</p>
+  <p style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6b6a65;margin:0 0 8px">Dastak · Lead escalation</p>
   <h1 style="font-size:20px;margin:0 0 16px">${esc(p.name)} needs a response</h1>
   <table style="font-size:14px;line-height:1.6;margin-bottom:20px">
     <tr><td style="color:#6b6a65;padding-right:16px">Source</td><td>${esc(p.source)}</td></tr>

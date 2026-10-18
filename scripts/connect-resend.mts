@@ -7,15 +7,15 @@ import { sendEmail } from "../src/server/integrations/resend";
 
 const prisma = new PrismaClient();
 const inbox = process.argv[2];
-const creds = { apiKey: (process.env.RESEND_API_KEY ?? "").trim(), from: (process.env.RESEND_FROM ?? "LeadGuard <onboarding@resend.dev>").trim() };
+const creds = { apiKey: (process.env.RESEND_API_KEY ?? "").trim(), from: (process.env.RESEND_FROM ?? "Dastak <onboarding@resend.dev>").trim() };
 if (!creds.apiKey || !inbox) throw new Error("Need RESEND_API_KEY in .env and an inbox argument");
 
 try {
   const id = await sendEmail(creds, {
     to: inbox,
-    subject: "LeadGuard is connected to Resend",
-    html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1c1b18"><p><b>Resend is connected.</b></p><p>Escalation alerts from LeadGuard will arrive at this address.</p></div>`,
-    text: "Resend is connected. Escalation alerts from LeadGuard will arrive at this address.",
+    subject: "Dastak is connected to Resend",
+    html: `<div style="font-family:Arial,sans-serif;font-size:14px;color:#1c1b18"><p><b>Resend is connected.</b></p><p>Escalation alerts from Dastak will arrive at this address.</p></div>`,
+    text: "Resend is connected. Escalation alerts from Dastak will arrive at this address.",
   });
   console.log(`✓ Test email accepted by Resend (id ${id}) → ${inbox}`);
 } catch (e) {

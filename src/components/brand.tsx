@@ -1,4 +1,4 @@
-import { ShieldCheck } from "lucide-react";
+import { DoorOpen } from "lucide-react";
 import clsx from "clsx";
 
 export function BrandMark({ className, inverted }: { className?: string; inverted?: boolean }) {
@@ -10,7 +10,7 @@ export function BrandMark({ className, inverted }: { className?: string; inverte
         className ?? "size-8",
       )}
     >
-      <ShieldCheck className="size-[56%]" strokeWidth={2.25} />
+      <DoorOpen className="size-[56%]" strokeWidth={2.25} />
     </span>
   );
 }
@@ -19,7 +19,7 @@ export function Brand({ inverted }: { inverted?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
       <BrandMark inverted={inverted} />
-      <span className="text-[15px] font-semibold tracking-[-0.01em]">LeadGuard</span>
+      <span className="text-[15px] font-semibold tracking-[-0.01em]">Dastak</span>
     </span>
   );
 }

@@ -65,7 +65,7 @@ export async function book(
   try {
     ev = await createEvent(employee.id, {
       summary: i.title,
-      description: `${i.notes ? `${i.notes}\n\n` : ""}Customer: ${contact.name}${contact.phone ? ` · ${contact.phone}` : ""}${contact.email ? ` · ${contact.email}` : ""}\nBooked via LeadGuard by ${ctx.userName}`,
+      description: `${i.notes ? `${i.notes}\n\n` : ""}Customer: ${contact.name}${contact.phone ? ` · ${contact.phone}` : ""}${contact.email ? ` · ${contact.email}` : ""}\nBooked via Dastak by ${ctx.userName}`,
       start, end, timeZone: i.timezone,
     });
   } catch (e) {

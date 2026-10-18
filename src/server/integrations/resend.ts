@@ -8,7 +8,7 @@ export async function sendEmail(creds: ResendCreds, m: { to: string; subject: st
     res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${creds.apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: creds.from || "LeadGuard <onboarding@resend.dev>", to: [m.to], subject: m.subject, html: m.html, text: m.text }),
+      body: JSON.stringify({ from: creds.from || "Dastak <onboarding@resend.dev>", to: [m.to], subject: m.subject, html: m.html, text: m.text }),
       signal: AbortSignal.timeout(10_000),
     });
   } catch {

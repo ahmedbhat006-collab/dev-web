@@ -120,7 +120,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const sidebarBody = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center justify-between px-5">
-        <Link href="/dashboard" aria-label="LeadGuard home"><Brand /></Link>
+        <Link href="/dashboard" aria-label="Dastak home"><Brand /></Link>
       </div>
       <div className="px-5 pb-5">
         <p className="eyebrow">Workspace</p>
@@ -162,7 +162,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <button onClick={() => setDrawer(true)} className="rounded-md p-2 text-muted hover:bg-surface-2 hover:text-fg lg:hidden" aria-label="Open menu">
           <Menu className="size-5" />
         </button>
-        <span className="lg:hidden"><Link href="/dashboard" aria-label="LeadGuard home"><BrandMark className="size-7" /></Link></span>
+        <span className="lg:hidden"><Link href="/dashboard" aria-label="Dastak home"><BrandMark className="size-7" /></Link></span>
         <button
           onClick={() => cmd.setOpen(true)}
           className="ml-1 hidden h-9 flex-1 max-w-sm items-center gap-2.5 rounded-md border border-line bg-surface px-3 text-[13px] text-subtle transition-colors hover:border-line-strong hover:text-muted sm:flex"

@@ -31,18 +31,18 @@ export default function LoginPage() {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Sign in to your workspace."
-      footer={<>New to LeadGuard? <Link href="/signup" className="font-medium text-accent hover:underline">Create a workspace</Link></>}
+      subtitle="Good to see you again."
+      footer={<>New to Dastak? <Link href="/signup" className="font-medium text-accent hover:underline">Create a workspace</Link></>}
     >
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Work email">
-          <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required className="h-10" />
+          <Input type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required className="h-11 rounded-full px-4" />
         </Field>
         <Field label="Password">
-          <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-10" />
+          <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="h-11 rounded-full px-4" />
         </Field>
-        {error && <p role="alert" className="rounded-lg border border-danger/20 bg-danger/8 px-3 py-2 text-[13px] text-danger">{error}</p>}
-        <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-2 w-full">Sign in</Button>
+        {error && <p role="alert" className="rounded-2xl border border-danger/20 bg-danger/8 px-3 py-2 text-[13px] text-danger">{error}</p>}
+        <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-2 w-full rounded-full">Sign in</Button>
       </form>
     </AuthLayout>
   );

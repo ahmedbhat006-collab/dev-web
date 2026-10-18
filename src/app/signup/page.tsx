@@ -30,25 +30,25 @@ export default function SignupPage() {
 
   return (
     <AuthLayout
-      title="Create your workspace"
-      subtitle="You'll be the Owner. Invite your team next."
+      title="Get started"
+      subtitle="Set up your team in a minute."
       footer={<>Already have an account? <Link href="/login" className="font-medium text-accent hover:underline">Sign in</Link></>}
     >
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <Field label="Company name">
-          <Input value={f.companyName} onChange={set("companyName")} placeholder="Sunrise Solar" required className="h-10" autoComplete="organization" />
+          <Input value={f.companyName} onChange={set("companyName")} placeholder="Sunrise Solar" required className="h-11 rounded-full px-4" autoComplete="organization" />
         </Field>
         <Field label="Your name">
-          <Input value={f.name} onChange={set("name")} placeholder="Ayesha Khan" required className="h-10" autoComplete="name" />
+          <Input value={f.name} onChange={set("name")} placeholder="Ayesha Khan" required className="h-11 rounded-full px-4" autoComplete="name" />
         </Field>
         <Field label="Work email">
-          <Input type="email" value={f.email} onChange={set("email")} placeholder="you@company.com" required className="h-10" autoComplete="email" />
+          <Input type="email" value={f.email} onChange={set("email")} placeholder="you@company.com" required className="h-11 rounded-full px-4" autoComplete="email" />
         </Field>
         <Field label="Password" hint="At least 8 characters.">
-          <Input type="password" value={f.password} onChange={set("password")} placeholder="••••••••" required minLength={8} className="h-10" autoComplete="new-password" />
+          <Input type="password" value={f.password} onChange={set("password")} placeholder="••••••••" required minLength={8} className="h-11 rounded-full px-4" autoComplete="new-password" />
         </Field>
-        {error && <p role="alert" className="rounded-lg border border-danger/20 bg-danger/8 px-3 py-2 text-[13px] text-danger">{error}</p>}
-        <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-2 w-full">Create workspace</Button>
+        {error && <p role="alert" className="rounded-2xl border border-danger/20 bg-danger/8 px-3 py-2 text-[13px] text-danger">{error}</p>}
+        <Button type="submit" variant="primary" size="lg" loading={loading} className="mt-2 w-full rounded-full">Create workspace</Button>
       </form>
     </AuthLayout>
   );

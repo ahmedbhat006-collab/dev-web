@@ -7,7 +7,7 @@ const plex = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "LeadGuard", template: "%s · LeadGuard" },
+  title: { default: "Dastak", template: "%s · Dastak" },
   description: "Every lead, owned. A CRM that guarantees every inbound lead is acted on.",
 };
 

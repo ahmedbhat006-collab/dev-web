@@ -190,7 +190,7 @@ async function main() {
   const e = process.env;
   await integ("WHATSAPP", { phoneNumberId: e.WHATSAPP_PHONE_NUMBER_ID, accessToken: e.WHATSAPP_ACCESS_TOKEN, appSecret: e.WHATSAPP_APP_SECRET, verifyToken: e.WHATSAPP_VERIFY_TOKEN }, ["accessToken", "appSecret", "verifyToken"]);
   await integ("STRIPE", { secretKey: e.STRIPE_SECRET_KEY, webhookSecret: e.STRIPE_WEBHOOK_SECRET }, ["secretKey", "webhookSecret"]);
-  await integ("RESEND", { apiKey: e.RESEND_API_KEY, from: e.RESEND_FROM || "LeadGuard <onboarding@resend.dev>" }, ["apiKey"]);
+  await integ("RESEND", { apiKey: e.RESEND_API_KEY, from: e.RESEND_FROM || "Dastak <onboarding@resend.dev>" }, ["apiKey"]);
 
   await prisma.auditLog.create({ data: { workspaceId: W, actorName: "System", action: "DEMO_DATA_SEEDED", targetType: "Workspace", targetId: W, targetLabel: ws.name } });
 

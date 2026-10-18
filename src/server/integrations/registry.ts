@@ -40,7 +40,7 @@ export const PROVIDER_DEFS: Record<
   RESEND: {
     fields: [
       { key: "apiKey", label: "API key", secret: true, placeholder: "re_…" },
-      { key: "from", label: "From address", secret: false, placeholder: "LeadGuard <onboarding@resend.dev>" },
+      { key: "from", label: "From address", secret: false, placeholder: "Dastak <onboarding@resend.dev>" },
     ],
     can: ["Email the new owner within seconds when a lead escalates", "Retry failed emails up to 3 times"],
     cannot: ["Without a verified domain, Resend only delivers to your own Resend account email"],

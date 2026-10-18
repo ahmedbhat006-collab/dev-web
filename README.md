@@ -1,4 +1,4 @@
-# LeadGuard: every lead, owned
+# Dastak: every lead, owned
 
 A multi-tenant CRM for service businesses. Every inbound lead gets one accountable owner, a live acknowledgement timer, and automatic escalation. It connects to WhatsApp, Stripe, Google Calendar and email. All of them are free or test-mode services.
 
@@ -48,27 +48,27 @@ Each workspace connects its own keys in **Settings → Integrations**. Keys are 
 1. Go to developers.facebook.com, choose **My Apps → Create app → Business**, then add the **WhatsApp** product.
 2. Open **WhatsApp → API Setup**. Copy the **Phone number ID** and the **temporary access token**. Under "To", add and verify your own phone number (up to 5 recipients).
 3. Open **App settings → Basic** and copy the **App secret**.
-4. In LeadGuard, connect WhatsApp with those values plus a verify token of your choice.
-5. Open **WhatsApp → Configuration → Webhook**. Paste the webhook URL from LeadGuard and the same verify token, then subscribe to **messages**.
-6. Send a WhatsApp message from your phone to the test number. A contact and a lead appear in LeadGuard.
+4. In Dastak, connect WhatsApp with those values plus a verify token of your choice.
+5. Open **WhatsApp → Configuration → Webhook**. Paste the webhook URL from Dastak and the same verify token, then subscribe to **messages**.
+6. Send a WhatsApp message from your phone to the test number. A contact and a lead appear in Dastak.
 
 Limits: the test number only reaches verified recipients. Free-form replies only work within 24h of the customer's last message. Temporary tokens expire after 24h (create a System User token for a permanent one).
 
 ### Stripe (test mode)
 1. Go to dashboard.stripe.com, switch to **Test mode**, and copy the **Secret key** (`sk_test_…`) from **Developers → API keys**.
-2. Open **Developers → Webhooks → Add endpoint**. Use the URL from LeadGuard and select these events: `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `payment_intent.payment_failed`, `charge.refunded`. Copy the signing secret (`whsec_…`).
-3. Connect Stripe in LeadGuard. Pay with test card `4242 4242 4242 4242`.
+2. Open **Developers → Webhooks → Add endpoint**. Use the URL from Dastak and select these events: `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `payment_intent.payment_failed`, `charge.refunded`. Copy the signing secret (`whsec_…`).
+3. Connect Stripe in Dastak. Pay with test card `4242 4242 4242 4242`.
 
 ### Google Calendar (OAuth 2.0)
 1. In console.cloud.google.com, create a project and enable the **Google Calendar API**.
 2. Set up the **OAuth consent screen**: External, Testing. Add every employee's Gmail as a **test user**.
-3. Open **Credentials → Create OAuth client → Web**, and set the redirect URI to the one shown on LeadGuard's Integrations page (`APP_URL/api/integrations/google/callback`).
+3. Open **Credentials → Create OAuth client → Web**, and set the redirect URI to the one shown on Dastak's Integrations page (`APP_URL/api/integrations/google/callback`).
 4. Put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env` and restart.
 5. Each employee connects their own calendar in **Settings → Profile**.
 
 ### Resend (escalation emails)
 1. Sign up at resend.com and create an API key (`re_…`).
-2. Connect Resend in LeadGuard. Without a verified domain, Resend only delivers to your own Resend account email, so set that as your alert email in **Settings → Profile**.
+2. Connect Resend in Dastak. Without a verified domain, Resend only delivers to your own Resend account email, so set that as your alert email in **Settings → Profile**.
 
 ### AI chat assistant (Google Gemini, free tier)
 1. Create a key at aistudio.google.com → **Get API key**, put it in `.env` as `GEMINI_API_KEY`, restart.
