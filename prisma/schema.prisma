@@ -1,0 +1,606 @@
+generator client {
+  provider        = "prisma-client-js"
+  // Load included relations in one SQL query (LATERAL joins) instead of one round-trip per relation.
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Level {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  AVAILABLE
+  BUSY
+  ON_LEAVE
+  OFFLINE
+}
+
+enum StageKind {
+  OPEN
+  WON
+  LOST
+}
+
+enum FieldEntity {
+  CONTACT
+  OPPORTUNITY
+}
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  DROPDOWN
+  CHECKBOX
+}
+
+enum LeadSource {
+  WEB_FORM
+  WHATSAPP
+  MANUAL
+  CHATBOT
+}
+
+enum LeadStatus {
+  OPEN
+  ACKNOWLEDGED
+  CLOSED
+}
+
+enum EscalationTarget {
+  NEXT_ELIGIBLE
+  BACKUP
+  MANAGER
+}
+
+enum ActivityType {
+  NOTE
+  CALL
+  STAGE_CHANGE
+  ASSIGNMENT
+  ESCALATION
+  ACK
+  FIELD_EDIT
+  MESSAGE
+  PAYMENT
+  APPOINTMENT
+  SYSTEM
+}
+
+enum Provider {
+  WHATSAPP
+  STRIPE
+  GOOGLE
+  RESEND
+}
+
+enum IntegrationStatus {
+  NOT_CONNECTED
+  CONNECTED
+  ERROR
+}
+
+enum EventDirection {
+  IN
+  OUT
+}
+
+enum EventResult {
+  OK
+  ERROR
+  REJECTED
+  DUPLICATE
+}
+
+enum MessageDirection {
+  IN
+  OUT
+}
+
+enum MessageStatus {
+  RECEIVED
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CANCELLED
+}
+
+enum JobKind {
+  SEND_EMAIL
+  SEND_WHATSAPP
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  RETRYING
+  DONE
+  FAILED
+}
+
+// ---------- Accounts ----------
+
+model Workspace {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  /// What the public AI assistant knows about the company (services, prices, hours, areas). Edited in Settings.
+  assistantInfo String?
+  createdAt     DateTime @default(now())
+}
+
+model User {
+  id            String     @id @default(cuid())
+  workspaceId   String
+  email         String     @unique
+  name          String
+  passwordHash  String
+  level         Level      @default(USER)
+  roleId        String?
+  role          Role?      @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  status        UserStatus @default(AVAILABLE)
+  receivesLeads Boolean    @default(true)
+  notifyEmail   String?
+  timezone      String     @default("UTC")
+  active        Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+
+  sessions      Session[]
+  google        GoogleConnection?
+  contacts      Contact[]          @relation("ContactOwner")
+  opportunities Opportunity[]      @relation("OppOwner")
+  leads         Lead[]             @relation("LeadAssignee")
+  conversations Conversation[]     @relation("ConvAssignee")
+  payments      Payment[]          @relation("PaymentRequester")
+  appointments  Appointment[]
+  notifications Notification[]
+
+  @@index([workspaceId])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  permissions String[] @default([])
+  createdAt   DateTime @default(now())
+  users       User[]
+
+  @@unique([workspaceId, name])
+}
+
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
+// ---------- CRM ----------
+
+model Company {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  domain      String?
+  phone       String?
+  createdAt   DateTime  @default(now())
+  contacts    Contact[]
+
+  @@index([workspaceId])
+}
+
+model Contact {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  name          String
+  email         String?
+  phone         String?
+  companyId     String?
+  company       Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  ownerId       String?
+  owner         User?          @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tags          String[]       @default([])
+  customValues  Json           @default("{}")
+  optedOut      Boolean        @default(false)
+  optOutReason  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  opportunities Opportunity[]
+  leads         Lead[]
+  conversations Conversation[]
+  payments      Payment[]
+  appointments  Appointment[]
+  activities    Activity[]
+
+  @@unique([workspaceId, phone])
+  @@index([workspaceId, createdAt])
+}
+
+model Pipeline {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  name          String
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  stages        Stage[]
+  opportunities Opportunity[]
+  fields        CustomField[]
+
+  @@index([workspaceId])
+}
+
+model Stage {
+  id               String        @id @default(cuid())
+  workspaceId      String
+  pipelineId       String
+  pipeline         Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name             String
+  order            Int
+  kind             StageKind     @default(OPEN)
+  requiredFieldIds String[]      @default([])
+  opportunities    Opportunity[]
+
+  @@index([pipelineId])
+}
+
+model Opportunity {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  title        String
+  contactId    String
+  contact      Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  pipelineId   String
+  pipeline     Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Restrict)
+  stageId      String
+  stage        Stage         @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  value        Float         @default(0)
+  currency     String        @default("USD")
+  ownerId      String?
+  owner        User?         @relation("OppOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  customValues Json          @default("{}")
+  version      Int           @default(1)
+  closedAt     DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  leads        Lead[]
+  payments     Payment[]
+  appointments Appointment[]
+  activities   Activity[]
+
+  @@index([workspaceId, stageId])
+}
+
+model CustomField {
+  id          String      @id @default(cuid())
+  workspaceId String
+  entity      FieldEntity
+  pipelineId  String?
+  pipeline    Pipeline?   @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  key         String
+  type        FieldType
+  options     String[]    @default([])
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+
+  @@unique([workspaceId, key])
+}
+
+model SavedList {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  name        String
+  filters     Json
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, userId])
+}
+
+model Activity {
+  id            String       @id @default(cuid())
+  workspaceId   String
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  leadId        String?
+  lead          Lead?        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type          ActivityType
+  actorId       String?
+  actorName     String
+  summary       String
+  fromUserId    String?
+  toUserId      String?
+  data          Json?
+  createdAt     DateTime     @default(now())
+
+  @@index([contactId, createdAt])
+  @@index([opportunityId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([workspaceId, type, createdAt])
+}
+
+// ---------- Lead engine ----------
+
+model Lead {
+  id              String       @id @default(cuid())
+  workspaceId     String
+  contactId       String
+  contact         Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  opportunityId   String?
+  opportunity     Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  source          LeadSource
+  title           String?
+  status          LeadStatus   @default(OPEN)
+  assigneeId      String?
+  assignee        User?        @relation("LeadAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?
+  firstAssignedAt DateTime?
+  ackDeadline     DateTime?
+  acknowledgedAt  DateTime?
+  firstAckAt      DateTime?
+  firstAckById    String?
+  escalationLevel Int          @default(0)
+  escalationCount Int          @default(0)
+  exhausted       Boolean      @default(false)
+  ownerAway       Boolean      @default(false)
+  lastActionAt    DateTime     @default(now())
+  version         Int          @default(1)
+  createdAt       DateTime     @default(now())
+  activities      Activity[]
+
+  @@index([workspaceId, status])
+  @@index([ackDeadline])
+  @@index([assigneeId, status])
+}
+
+model AssignmentRule {
+  id            String            @id @default(cuid())
+  workspaceId   String            @unique
+  maxOpenLeads  Int               @default(5)
+  rrCursor      String?
+  ackWindowSec  Int               @default(60)
+  idleSec       Int               @default(600)
+  backupUserId  String?
+  managerUserId String?
+  updatedAt     DateTime          @updatedAt
+  levels        EscalationLevel[]
+}
+
+model EscalationLevel {
+  id      String           @id @default(cuid())
+  ruleId  String
+  rule    AssignmentRule   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  order   Int
+  target  EscalationTarget
+  seconds Int
+}
+
+model Notification {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  body        String?
+  link        String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ---------- Audit (append-only; a DB trigger blocks UPDATE/DELETE) ----------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  actorId     String?
+  actorName   String
+  action      String
+  targetType  String
+  targetId    String?
+  targetLabel String?
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, action])
+}
+
+// ---------- Integrations ----------
+
+model Integration {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  provider       Provider
+  status         IntegrationStatus @default(NOT_CONNECTED)
+  encryptedCreds String?
+  hints          Json              @default("{}")
+  lastOkAt       DateTime?
+  lastError      String?
+  lastErrorAt    DateTime?
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([workspaceId, provider])
+}
+
+model GoogleConnection {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspaceId     String
+  googleEmail     String?
+  encryptedTokens String
+  expiresAt       DateTime?
+  needsReconnect  Boolean   @default(false)
+  lastError       String?
+  lastOkAt        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Conversation {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  contactId     String
+  contact       Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  channel       String    @default("WHATSAPP")
+  assigneeId    String?
+  assignee      User?     @relation("ConvAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  opportunityId String?
+  lastMessageAt DateTime  @default(now())
+  unread        Int       @default(0)
+  messages      Message[]
+
+  @@unique([workspaceId, contactId, channel])
+}
+
+model Message {
+  id             String           @id @default(cuid())
+  workspaceId    String
+  conversationId String
+  conversation   Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  direction      MessageDirection
+  body           String
+  status         MessageStatus
+  errorCode      String?
+  errorMessage   String?
+  providerSid    String?          @unique
+  sentById       String?
+  sentByName     String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([conversationId, createdAt])
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  workspaceId           String
+  opportunityId         String
+  opportunity           Opportunity   @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  contactId             String
+  contact               Contact       @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  requestedById         String?
+  requestedBy           User?         @relation("PaymentRequester", fields: [requestedById], references: [id], onDelete: SetNull)
+  amount                Int
+  currency              String
+  description           String
+  status                PaymentStatus @default(PENDING)
+  stripeSessionId       String?       @unique
+  stripePaymentIntentId String?
+  url                   String?
+  refundedAmount        Int           @default(0)
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([workspaceId, status])
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  contactId     String
+  contact       Contact           @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  opportunity   Opportunity?      @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  googleEventId String?
+  googleLink    String?
+  title         String
+  notes         String?
+  startUtc      DateTime
+  endUtc        DateTime
+  timezone      String
+  status        AppointmentStatus @default(SCHEDULED)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([workspaceId, startUtc])
+}
+
+model IntegrationEvent {
+  id          String         @id @default(cuid())
+  workspaceId String?
+  provider    Provider
+  direction   EventDirection
+  type        String
+  externalId  String?
+  result      EventResult
+  summary     String?
+  error       String?
+  createdAt   DateTime       @default(now())
+
+  @@unique([provider, externalId])
+  @@index([workspaceId, createdAt])
+}
+
+model OutboundJob {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  kind          JobKind
+  payload       Json
+  status        JobStatus @default(PENDING)
+  attempts      Int       @default(0)
+  maxAttempts   Int       @default(3)
+  nextAttemptAt DateTime  @default(now())
+  lastError     String?
+  refId         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([workspaceId, createdAt])
+}
+
+model DashboardPref {
+  userId String   @id
+  hidden String[] @default([])
+}

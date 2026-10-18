@@ -1,0 +1,45 @@
+{
+    "name": "leadguard",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "prisma generate && next build",
+        "start": "next start",
+        "typecheck": "tsc --noEmit",
+        "db:push": "prisma db push",
+        "db:seed": "tsx --env-file=.env prisma/seed.ts",
+        "setup": "prisma db push && tsx --env-file=.env prisma/seed.ts",
+        "postinstall": "prisma generate",
+        "demo": "npm run build && next start",
+        "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/tunnel.ps1",
+        "clean:test-data": "tsx --env-file=.env scripts/cleanup-test-data.mts"
+    },
+    "dependencies": {
+        "@prisma/client": "^6.19.3",
+        "bcryptjs": "^3.0.3",
+        "clsx": "^2.1.1",
+        "jose": "^6.2.12",
+        "lucide-react": "^1.59.0",
+        "next": "^15.5.28",
+        "next-themes": "^0.4.6",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
+        "sonner": "^2.0.8",
+        "stripe": "^23.0.0",
+        "swr": "^2.5.1",
+        "tailwind-merge": "^3.7.0",
+        "zod": "^3.25.76"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.3",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/node": "^26.6.5",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "prisma": "^6.19.3",
+        "tailwindcss": "^4.3.3",
+        "tsx": "^4.23.15",
+        "typescript": "^5.9.3"
+    }
+}
