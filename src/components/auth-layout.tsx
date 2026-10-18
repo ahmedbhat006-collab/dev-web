@@ -107,8 +107,11 @@ export function AuthLayout({ title, subtitle, children, footer }: { title: strin
       <div className="absolute right-3 top-3 z-10"><ThemeToggle /></div>
       <div className="bubble-in relative z-10 w-full max-w-[380px] rounded-[28px] border border-white/70 bg-white/75 p-8 shadow-[0_30px_80px_-30px_rgba(60,40,20,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-[#1f1c17]/80 sm:p-9">
         <div className="mb-7 flex flex-col items-center text-center">
-          <BrandMark className="size-12 rounded-2xl" />
-          <h1 className="mt-5 text-[26px] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
+          <div className="flex items-center gap-2.5">
+            <BrandMark className="size-11 rounded-2xl" />
+            <span className="text-[22px] font-semibold tracking-[-0.02em]">Dastak</span>
+          </div>
+          <h1 className="mt-6 text-[26px] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
           <p className="mt-1.5 text-sm text-muted">{subtitle}</p>
         </div>
         {children}
